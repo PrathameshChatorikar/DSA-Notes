@@ -72,3 +72,51 @@ n-1 edges
 connected
 =
 TREE
+
+
+    == =======
+    LAMBDA = small local function
+
+Syntax:
+
+[capture](parameters) {
+    body
+};
+
+----------------------------
+
+[]       → capture nothing
+
+[&]      → everything by reference
+           CAN modify originals
+
+[=]      → everything by value
+           COPY
+
+[x]      → x by value
+
+[&x]     → x by reference
+
+[x, &y]  → x copy, y reference
+
+----------------------------
+
+Example:
+
+auto add = [](int a, int b) {
+    return a + b;
+};
+
+----------------------------
+
+Your BFS:
+
+auto tryMove = [&](int ni, int nj) {
+    ...
+};
+
+[&]            → use outside variables
+ni, nj         → function arguments
+return         → exits lambda
+tryMove(...)   → calls lambda
+    == =======
