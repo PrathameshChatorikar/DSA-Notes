@@ -43,3 +43,32 @@ bool dfs(int node,
         return true;
     }
 
+We process every edge once
+→ O(E)
+
+DFS:
+Every node visited once  → O(V)
+Every edge examined      → O(E)
+
+So DFS is:
+O(V + E)
+
+Then checking visited:
+O(V)
+
+Total : (O(E)+O(V+E)+O(V)\)
+
+TREE
+ |
+ ├── Connected
+ |
+ └── No cycle
+
+
+n nodes
++
+n-1 edges
++
+connected
+=
+TREE
