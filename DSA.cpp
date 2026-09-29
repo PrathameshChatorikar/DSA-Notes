@@ -929,7 +929,314 @@ else
 Time = O(V + E)
 Space = O(V + E)
 ===========================================================================
+    class Solution {
+public:
+    vector<int> findMinHeightTrees(
+        int n,
+        vector<vector<int>>& edges) {
+
+        // Special case:
+        // One node itself is the answer.
+        if (n == 1) {
+            return {0};
+        }
+
+        // -----------------------------------------
+        // Build adjacency list
+        // -----------------------------------------
+        vector<vector<int>> adj(n);
+
+        // degree[i] = number of neighbors of node i
+        vector<int> degree(n, 0);
+
+        for (auto& edge : edges) {
+
+            int u = edge[0];
+            int v = edge[1];
+
+            adj[u].push_back(v);
+            adj[v].push_back(u);
+
+            degree[u]++;
+            degree[v]++;
+        }
+
+        queue<int> q;
+
+        // -----------------------------------------
+        // Initial leaves:
+        //
+        // In a tree, a leaf has degree 1.
+        // -----------------------------------------
+        for (int node = 0; node < n; node++) {
+
+            if (degree[node] == 1) {
+                q.push(node);
+            }
+        }
+
+        int remainingNodes = n;
+
+        // -----------------------------------------
+        // Remove leaves level by level.
+        //
+        // Stop when only 1 or 2 nodes remain.
+        // Those are the center(s).
+        // -----------------------------------------
+        while (remainingNodes > 2) {
+
+            int leafCount = q.size();
+
+            // Remove this entire outer layer
+            remainingNodes -= leafCount;
+
+            while (leafCount--) {
+
+                int leaf = q.front();
+                q.pop();
+
+                // "Remove" leaf from graph
+                for (int neighbor : adj[leaf]) {
+
+                    degree[neighbor]--;
+
+                    // If neighbor becomes degree 1,
+                    // it becomes a new leaf.
+                    if (degree[neighbor] == 1) {
+                        q.push(neighbor);
+                    }
+                }
+            }
+        }
+
+        // Whatever remains in queue
+        // is the center: 1 or 2 nodes.
+        vector<int> answer;
+
+        while (!q.empty()) {
+            answer.push_back(q.front());
+            q.pop();
+        }
+
+        return answer;
+    }
+};
+310 MINIMUM HEIGHT TREES
+
+TREE CENTER problem
+
+Leaves = degree 1
+
+queue all leaves
+
+while remainingNodes > 2:
+
+    size = q.size()
+
+    remainingNodes -= size
+
+    remove all current leaves
+
+    for neighbor:
+        degree[neighbor]--
+
+        if degree[neighbor] == 1:
+            push neighbor
+
+remaining 1 or 2 nodes
+= answer
+Time = O(V)
+Space = O(V)
+    Minimum Height Tree → trim leaves with BFS until 1 or 2 centers remain.
 ===========================================================================
+    329 LONGEST INCREASING PATH
+
+Think:
+MATRIX -> DAG
+
+smaller -> larger
+
+For every cell:
+    if neighbor > current:
+        indegree[neighbor]++
+
+Queue:
+    all indegree == 0
+
+BFS level by level:
+
+while q:
+    size = q.size()
+    levels++
+
+    while size--:
+        pop cell
+
+        for larger neighbor:
+            indegree[neighbor]--
+
+            if indegree == 0:
+                push
+
+answer = number of BFS levels
+    class Solution {
+public:
+    int longestIncreasingPath(vector<vector<int>>& matrix) {
+
+        int rows = matrix.size();
+        int cols = matrix[0].size();
+
+        // indegree[r][c]
+        // = number of smaller neighbors pointing to this cell
+        vector<vector<int>> indegree(
+            rows,
+            vector<int>(cols, 0)
+        );
+
+        // --------------------------------------------------
+        // STEP 1: Build indegree
+        //
+        // For each cell:
+        // if neighbor is larger,
+        //
+        // current ---> neighbor
+        //
+        // therefore indegree[neighbor]++
+        // --------------------------------------------------
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+
+                // Down
+                if (r + 1 < rows &&
+                    matrix[r + 1][c] > matrix[r][c]) {
+
+                    indegree[r + 1][c]++;
+                }
+
+                // Up
+                if (r - 1 >= 0 &&
+                    matrix[r - 1][c] > matrix[r][c]) {
+
+                    indegree[r - 1][c]++;
+                }
+
+                // Right
+                if (c + 1 < cols &&
+                    matrix[r][c + 1] > matrix[r][c]) {
+
+                    indegree[r][c + 1]++;
+                }
+
+                // Left
+                if (c - 1 >= 0 &&
+                    matrix[r][c - 1] > matrix[r][c]) {
+
+                    indegree[r][c - 1]++;
+                }
+            }
+        }
+
+        queue<pair<int, int>> q;
+
+        // --------------------------------------------------
+        // STEP 2:
+        // Push all cells with indegree 0.
+        //
+        // These are starting points of increasing paths.
+        // --------------------------------------------------
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+
+                if (indegree[r][c] == 0) {
+                    q.push({r, c});
+                }
+            }
+        }
+
+        int longestPath = 0;
+
+        // --------------------------------------------------
+        // STEP 3: Kahn's BFS level by level
+        //
+        // Each BFS level corresponds to one additional
+        // value in an increasing path.
+        // --------------------------------------------------
+
+        while (!q.empty()) {
+
+            int levelSize = q.size();
+
+            // We are processing one topological layer
+            longestPath++;
+
+            while (levelSize--) {
+
+                auto [r, c] = q.front();
+                q.pop();
+
+                // ------------------------------------------
+                // Visit all LARGER neighbors.
+                //
+                // Since current -> larger neighbor,
+                // removing current decreases their indegree.
+                // ------------------------------------------
+
+                // Down
+                if (r + 1 < rows &&
+                    matrix[r + 1][c] > matrix[r][c]) {
+
+                    indegree[r + 1][c]--;
+
+                    if (indegree[r + 1][c] == 0) {
+                        q.push({r + 1, c});
+                    }
+                }
+
+                // Up
+                if (r - 1 >= 0 &&
+                    matrix[r - 1][c] > matrix[r][c]) {
+
+                    indegree[r - 1][c]--;
+
+                    if (indegree[r - 1][c] == 0) {
+                        q.push({r - 1, c});
+                    }
+                }
+
+                // Right
+                if (c + 1 < cols &&
+                    matrix[r][c + 1] > matrix[r][c]) {
+
+                    indegree[r][c + 1]--;
+
+                    if (indegree[r][c + 1] == 0) {
+                        q.push({r, c + 1});
+                    }
+                }
+
+                // Left
+                if (c - 1 >= 0 &&
+                    matrix[r][c - 1] > matrix[r][c]) {
+
+                    indegree[r][c - 1]--;
+
+                    if (indegree[r][c - 1] == 0) {
+                        q.push({r, c - 1});
+                    }
+                }
+            }
+        }
+
+        return longestPath;
+    }
+};
+Time = O(R * C)
+indegree = O(R * C)
+queue    = O(R * C)
+
+Space = O(R * C)
 ===========================================================================
 ===========================================================================
 ===========================================================================
