@@ -641,7 +641,293 @@ public:
     }
 };
 ===========================================================================
+    class Solution {
+public:
+
+    class DSU {
+    public:
+        vector<int> parent;
+        vector<int> rank;
+
+        DSU(int n) {
+
+            parent.resize(n);
+            rank.resize(n, 0);
+
+            // Initially every node is its own parent/component
+            for (int i = 0; i < n; i++) {
+                parent[i] = i;
+            }
+        }
+
+        // Find representative/root of the component
+        int find(int node) {
+
+            if (parent[node] == node) {
+                return node;
+            }
+
+            // Path compression
+            return parent[node] = find(parent[node]);
+        }
+
+        // Merge two components
+        void unite(int a, int b) {
+
+            int rootA = find(a);
+            int rootB = find(b);
+
+            // Already connected
+            if (rootA == rootB) {
+                return;
+            }
+
+            // Union by rank
+            if (rank[rootA] < rank[rootB]) {
+
+                parent[rootA] = rootB;
+            }
+            else if (rank[rootA] > rank[rootB]) {
+
+                parent[rootB] = rootA;
+            }
+            else {
+
+                parent[rootB] = rootA;
+                rank[rootA]++;
+            }
+        }
+    };
+
+
+    vector<bool> pathExistenceQueries(
+        int n,
+        vector<int>& nums,
+        int maxDiff,
+        vector<vector<int>>& queries) {
+
+        DSU dsu(n);
+
+
+        // --------------------------------------------------
+        // nums is sorted.
+        //
+        // We only need to compare ADJACENT elements.
+        //
+        // If adjacent difference <= maxDiff:
+        //
+        // i-1 -------- i
+        //
+        // they belong to same connected component.
+        //
+        // If difference > maxDiff:
+        //
+        // i-1     |     i
+        //         BREAK
+        //
+        // No node from the left can reach the right.
+        // --------------------------------------------------
+
+        for (int i = 1; i < n; i++) {
+
+            if (nums[i] - nums[i - 1] <= maxDiff) {
+
+                dsu.unite(i - 1, i);
+            }
+        }
+
+
+        vector<bool> answer;
+
+        // --------------------------------------------------
+        // Query:
+        //
+        // If u and v have same root,
+        // they belong to same component.
+        //
+        // Therefore a path exists.
+        // --------------------------------------------------
+
+        for (auto& query : queries) {
+
+            int u = query[0];
+            int v = query[1];
+
+            if (dsu.find(u) == dsu.find(v)) {
+
+                answer.push_back(true);
+            }
+            else {
+
+                answer.push_back(false);
+            }
+        }
+
+        return answer;
+    }
+};
+
+3532 PATH EXISTENCE
+
+nums is SORTED
+
+[1,3,5,10]
+   2 2  5
+   ✅✅  ❌
+
+0 --- 1 --- 2    |    3
+                 BREAK
+
+DSU:
+
+for i = 1 → n-1:
+
+    if nums[i] - nums[i-1] <= maxDiff:
+
+        union(i-1, i)
+
+
+QUERY:
+
+find(u) == find(v)
+        ↓
+      TRUE
+
+
+BIG GAP
+   ↓
+NEW COMPONENT
+for (int i = 1; i < n; i++) {
+
+    if (nums[i] - nums[i-1] <= maxDiff) {
+
+        dsu.unite(i-1, i);
+    }
+}
+
+for (auto q : queries) {
+
+    ans.push_back(
+        dsu.find(q[0]) == dsu.find(q[1])
+    );
+}
 ===========================================================================
+    class Solution {
+public:
+    vector<int> findOrder(
+        int numCourses,
+        vector<vector<int>>& prerequisites) {
+
+        // adj[b] contains courses that become available
+        // after finishing course b.
+        vector<vector<int>> adj(numCourses);
+
+        // indegree[i] = number of prerequisites
+        // still required for course i.
+        vector<int> indegree(numCourses, 0);
+
+        // --------------------------------------------------
+        // Build graph
+        //
+        // [a, b] means:
+        // b -> a
+        // --------------------------------------------------
+        for (auto& edge : prerequisites) {
+
+            int course = edge[0];
+            int prerequisite = edge[1];
+
+            adj[prerequisite].push_back(course);
+
+            indegree[course]++;
+        }
+
+        queue<int> q;
+
+        // --------------------------------------------------
+        // Courses with indegree 0 have no prerequisites.
+        // They can be taken immediately.
+        // --------------------------------------------------
+        for (int course = 0; course < numCourses; course++) {
+
+            if (indegree[course] == 0) {
+                q.push(course);
+            }
+        }
+
+        vector<int> order;
+
+        // --------------------------------------------------
+        // Kahn's BFS
+        // --------------------------------------------------
+        while (!q.empty()) {
+
+            int course = q.front();
+            q.pop();
+
+            // This course can now be taken.
+            order.push_back(course);
+
+            // Finishing this course removes one prerequisite
+            // from each dependent course.
+            for (int neighbor : adj[course]) {
+
+                indegree[neighbor]--;
+
+                // All prerequisites satisfied.
+                if (indegree[neighbor] == 0) {
+                    q.push(neighbor);
+                }
+            }
+        }
+
+        // --------------------------------------------------
+        // If we processed every course:
+        // valid topological order exists.
+        //
+        // Otherwise:
+        // cycle exists -> impossible.
+        // --------------------------------------------------
+        if (order.size() != numCourses) {
+            return {};
+        }
+
+        return order;
+    }
+};
+210 COURSE SCHEDULE II
+
+[a,b]
+means:
+b -> a
+
+BUILD:
+adj[b].push_back(a)
+indegree[a]++
+
+QUEUE:
+push all indegree == 0
+
+BFS:
+while q:
+    pop course
+    order.push_back(course)
+
+    for nei:
+        indegree[nei]--
+
+        if indegree[nei] == 0:
+            q.push(nei)
+
+FINAL:
+order.size() == n
+    return order
+
+else
+    return {}
+
+Time = O(V + E)
+Space = O(V + E)
 ===========================================================================
 ===========================================================================
 ===========================================================================
