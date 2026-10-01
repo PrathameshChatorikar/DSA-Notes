@@ -1442,6 +1442,534 @@ Time  = O(V log V)
 
 Space = O(R*C)
 ===========================================================================
+    # LeetCode Revision Notes
+
+### 207. Course Schedule
+**Trigger:** Directed graph + prerequisites → Kahn BFS
+
+`[a,b] => b -> a`
+
+```cpp
+adj[b].push_back(a);
+indegree[a]++;
+```
+
+```cpp
+push all indegree == 0
+
+while(q):
+    pop
+    count++
+
+    for nei:
+        indegree[nei]--
+        if indegree[nei] == 0:
+            push
+```
+
+`count == n` → possible  
+**Time:** `O(V + E)`
+
+---
+
+### 210. Course Schedule II
+Same as 207, but store order.
+
+```cpp
+order.push_back(course);
+```
+
+Final:
+
+```cpp
+if(order.size() != n) return {};
+return order;
+```
+
+**Time:** `O(V + E)`
+
+---
+
+### 269. Alien Dictionary
+**Trigger:** Ordering between characters → Topological Sort
+
+Compare adjacent words.
+
+```text
+"wrt"
+"wrf"
+
+first mismatch:
+t -> f
+```
+
+```cpp
+adj[a].insert(b);
+indegree[b]++;
+break;
+```
+
+Then Kahn BFS.
+
+Important invalid case:
+
+```text
+"abc"
+"ab"
+=> ""
+```
+
+Cycle:
+
+```cpp
+order.size() != uniqueChars
+```
+
+---
+
+### 310. Minimum Height Trees
+**Trigger:** Tree center → Trim leaves using BFS
+
+```cpp
+push all degree == 1
+```
+
+```cpp
+while(remaining > 2) {
+    size = q.size();
+    remaining -= size;
+
+    while(size--) {
+        leaf = pop();
+
+        for(nei) {
+            degree[nei]--;
+
+            if(degree[nei] == 1)
+                push(nei);
+        }
+    }
+}
+```
+
+Remaining `1 or 2` nodes = answer.
+
+**Time:** `O(V)`
+
+---
+
+### 329. Longest Increasing Path in Matrix
+**Trigger:** Increasing values create DAG → Kahn BFS
+
+```text
+smaller -> larger
+```
+
+For every larger neighbor:
+
+```cpp
+indegree[nr][nc]++;
+```
+
+Push all indegree `0`.
+
+BFS level by level:
+
+```cpp
+while(q) {
+    size = q.size();
+    levels++;
+
+    while(size--) {
+        pop;
+
+        for(larger nei) {
+            indegree[nei]--;
+
+            if(indegree[nei] == 0)
+                push;
+        }
+    }
+}
+```
+
+Answer = number of BFS levels.
+
+**Time:** `O(R*C)`
+
+---
+
+### 547. Number of Provinces
+**Trigger:** Count connected components
+
+BFS:
+
+```cpp
+for each city:
+    if not visited:
+        provinces++
+        BFS whole component
+```
+
+Memory:
+
+```text
+New BFS from unvisited node
+= New Province
+```
+
+DSU:
+
+```cpp
+if connected:
+    union(i,j)
+```
+
+Final components = provinces.
+
+**Time:** `O(n²)`
+
+---
+
+### 743. Network Delay Time
+**Trigger:** Weighted graph + positive weights → Dijkstra
+
+```cpp
+priority_queue<
+    pair<int,int>,
+    vector<pair<int,int>>,
+    greater<pair<int,int>>
+> pq;
+```
+
+State:
+
+```text
+{distance, node}
+```
+
+Relax:
+
+```cpp
+newDist = dist + weight;
+
+if(newDist < distance[nei]) {
+    distance[nei] = newDist;
+    pq.push({newDist, nei});
+}
+```
+
+Skip outdated:
+
+```cpp
+if(dist > distance[node])
+    continue;
+```
+
+Final:
+
+```text
+any INF -> -1
+else max(distance)
+```
+
+**Time:** `O((V+E) log V)`
+
+---
+
+### 787. Cheapest Flights Within K Stops
+**Trigger:** Weighted graph + limited stops
+
+```text
+k stops = k+1 edges
+```
+
+BFS state:
+
+```text
+{node, cost, edges}
+```
+
+```cpp
+if(edges == k+1)
+    continue;
+```
+
+Relax:
+
+```cpp
+newCost = cost + price;
+
+if(newCost < best[nei][edges+1]) {
+    update;
+    push;
+}
+```
+
+**Time:** `O((K+1)E)`
+
+---
+
+### 133. Clone Graph
+**Trigger:** Clone graph → HashMap + BFS
+
+```cpp
+unordered_map<Node*,Node*> mp;
+queue<Node*> q;
+```
+
+Start:
+
+```cpp
+mp[node] = new Node(node->val);
+q.push(node);
+```
+
+BFS:
+
+```cpp
+while(q) {
+    curr = pop();
+
+    for(nei) {
+        if(!mp.count(nei)) {
+            mp[nei] = new Node(nei->val);
+            q.push(nei);
+        }
+
+        mp[curr]->neighbors.push_back(mp[nei]);
+    }
+}
+```
+
+Memory:
+
+```text
+CLONE -> QUEUE -> POP -> CLONE NEI -> CONNECT
+```
+
+**Time:** `O(V+E)`
+
+---
+
+### 1584. Min Cost to Connect All Points
+**Trigger:** Minimum cost to connect all nodes → MST → Kruskal + DSU
+
+Generate every pair:
+
+```cpp
+cost =
+abs(x1-x2) +
+abs(y1-y2);
+```
+
+Sort edges.
+
+```cpp
+for(auto [cost,u,v] : edges) {
+    if(dsu.unite(u,v)) {
+        ans += cost;
+        count++;
+
+        if(count == n-1)
+            break;
+    }
+}
+```
+
+Memory:
+
+```text
+SORT EDGES
+-> CHEAPEST FIRST
+-> UNION IF DIFFERENT ROOT
+-> STOP AT n-1
+```
+
+**Time:** `O(n² log n)`
+
+---
+
+### 2492. Minimum Score of a Path
+**Trigger:** Minimum edge in city 1's connected component
+
+BFS:
+
+```cpp
+q.push(1);
+
+while(q) {
+    u = pop();
+
+    for(auto [v,w] : adj[u]) {
+        ans = min(ans,w);
+
+        if(!visited[v]) {
+            visited[v] = true;
+            q.push(v);
+        }
+    }
+}
+```
+
+DSU:
+
+```cpp
+for each road:
+    union(u,v)
+
+root = find(1)
+
+for each road:
+    if(find(u) == root)
+        ans = min(ans, weight)
+```
+
+**Time:** approximately `O(V+E)`
+
+---
+
+### 3532. Path Existence Queries in a Graph I
+**Trigger:** Sorted array + connectivity → DSU
+
+```cpp
+for(int i=1; i<n; i++) {
+    if(nums[i] - nums[i-1] <= maxDiff)
+        union(i-1,i);
+}
+```
+
+Query:
+
+```cpp
+find(u) == find(v)
+```
+
+Memory:
+
+```text
+small gap -> same component
+big gap   -> new component
+```
+
+Simpler approach:
+
+```cpp
+if(nums[i] - nums[i-1] > maxDiff)
+    componentId++;
+
+component[i] = componentId;
+```
+
+Query:
+
+```cpp
+component[u] == component[v]
+```
+
+**Time:** `O(n+q)`
+
+---
+
+### Find a Safe Walk Through a Grid
+**Trigger:** Grid + non-negative cost → Dijkstra
+
+Cell cost:
+
+```text
+0 -> lose 0 health
+1 -> lose 1 health
+```
+
+```cpp
+dist[0][0] = grid[0][0];
+```
+
+Heap state:
+
+```text
+{damage, r, c}
+```
+
+Relax:
+
+```cpp
+newDamage =
+damage + grid[nr][nc];
+
+if(newDamage < dist[nr][nc]) {
+    update;
+    push;
+}
+```
+
+Final:
+
+```cpp
+dist[end] < health
+```
+
+Important:
+
+```text
+damage == health -> health becomes 0 -> false
+```
+
+**Time:** `O(R*C log(R*C))`
+
+Optimization: `0-1 BFS`
+
+```text
+cost 0 -> push_front
+cost 1 -> push_back
+```
+
+---
+
+### 3481. Apply Substitutions
+**Preferred non-DFS idea:** Dependency Graph + Kahn BFS
+
+Example:
+
+```text
+B = "%A%x"
+
+A -> B
+```
+
+Build:
+
+```cpp
+graph[A].push_back(B);
+indegree[B]++;
+```
+
+Then:
+
+```cpp
+push indegree 0
+
+while(q) {
+    key = pop();
+
+    resolve(key);
+
+    for(dependent) {
+        indegree[dependent]--;
+
+        if(indegree[dependent] == 0)
+            push;
+    }
+}
+```
+
+Memory:
+
+```text
+Nested substitutions
+-> dependency graph
+-> Kahn BFS
+```
 ===========================================================================
 ===========================================================================
 ===========================================================================
