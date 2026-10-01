@@ -1238,7 +1238,209 @@ queue    = O(R * C)
 
 Space = O(R * C)
 ===========================================================================
+    class Solution {
+public:
+    int minScore(int n, vector<vector<int>>& roads) {
+
+        // adj[city] = {neighbor, roadDistance}
+        vector<vector<pair<int, int>>> adj(n + 1);
+
+        // Build undirected graph
+        for (auto& road : roads) {
+
+            int u = road[0];
+            int v = road[1];
+            int distance = road[2];
+
+            adj[u].push_back({v, distance});
+            adj[v].push_back({u, distance});
+        }
+
+        queue<int> q;
+        vector<bool> visited(n + 1, false);
+
+        q.push(1);
+        visited[1] = true;
+
+        int answer = INT_MAX;
+
+        // BFS through entire connected component of city 1
+        while (!q.empty()) {
+
+            int city = q.front();
+            q.pop();
+
+            for (auto [neighbor, distance] : adj[city]) {
+
+                // IMPORTANT:
+                // Every edge in this component can potentially
+                // determine the minimum score.
+                answer = min(answer, distance);
+
+                if (!visited[neighbor]) {
+
+                    visited[neighbor] = true;
+                    q.push(neighbor);
+                }
+            }
+        }
+
+        return answer;
+    }
+};
+Time:  O(V + E)
+Space: O(V + E)
+    class Solution {
+public:
+
+    class DSU {
+    public:
+        vector<int> parent;
+        vector<int> rank;
+
+        DSU(int n) {
+            parent.resize(n + 1);
+            rank.resize(n + 1, 0);
+
+            for (int i = 1; i <= n; i++) {
+                parent[i] = i;
+            }
+        }
+
+        int find(int node) {
+
+            if (parent[node] == node) {
+                return node;
+            }
+
+            return parent[node] = find(parent[node]);
+        }
+
+        void unite(int a, int b) {
+
+            int rootA = find(a);
+            int rootB = find(b);
+
+            if (rootA == rootB) {
+                return;
+            }
+
+            if (rank[rootA] < rank[rootB]) {
+                parent[rootA] = rootB;
+            }
+            else if (rank[rootA] > rank[rootB]) {
+                parent[rootB] = rootA;
+            }
+            else {
+                parent[rootB] = rootA;
+                rank[rootA]++;
+            }
+        }
+    };
+
+
+    int minScore(int n, vector<vector<int>>& roads) {
+
+        DSU dsu(n);
+
+        // 1. Build connected components
+        for (auto& road : roads) {
+
+            int u = road[0];
+            int v = road[1];
+
+            dsu.unite(u, v);
+        }
+
+        // 2. Find which component city 1 belongs to
+        int rootOfOne = dsu.find(1);
+
+        int answer = INT_MAX;
+
+        // 3. Scan every road
+        for (auto& road : roads) {
+
+            int u = road[0];
+            int v = road[1];
+            int weight = road[2];
+
+            // If this road is inside city 1's component
+            if (dsu.find(u) == rootOfOne) {
+
+                answer = min(answer, weight);
+            }
+        }
+
+        return answer;
+    }
+};
 ===========================================================================
+    SAFE WALK GRID
+
+grid cell:
+0 -> cost 0
+1 -> cost 1
+
+Need:
+minimum total damage < health
+
+Use:
+0-1 BFS
+
+dist[0][0] = grid[0][0]
+
+deque:
+
+if neighbor cost = 0
+    push_front
+
+if neighbor cost = 1
+    push_back
+
+Relax:
+newDamage =
+    dist[r][c] + grid[nr][nc]
+
+if newDamage < dist[nr][nc]:
+    update
+
+Final:
+dist[end] < health
+
+    deque<pair<int,int>> dq;
+
+dist[0][0] = grid[0][0];
+dq.push_front({0,0});
+
+while (!dq.empty()) {
+
+    auto [r,c] = dq.front();
+    dq.pop_front();
+
+    for each neighbor {
+
+        int newDist =
+            dist[r][c] + grid[nr][nc];
+
+        if (newDist < dist[nr][nc]) {
+
+            dist[nr][nc] = newDist;
+
+            if (grid[nr][nc] == 0)
+                dq.push_front({nr,nc});
+            else
+                dq.push_back({nr,nc});
+        }
+    }
+}
+Time  = O(R * C)
+Space = O(R * C)
+
+    and if solve using Dijkstra 
+Time  = O(V log V)
+      = O(R*C log(R*C))
+
+Space = O(R*C)
 ===========================================================================
 ===========================================================================
 ===========================================================================
